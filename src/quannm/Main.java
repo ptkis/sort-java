@@ -30,7 +30,7 @@ public class Main {
 
 
     public static void main(String[] args) throws IOException {
-        System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+        nu.pattern.OpenCV.loadLocally();
         ArrayList<String> Sequences = new ArrayList<>(Arrays.asList("PETS09-S2L1", "TUD-Campus", "TUD-Stadtmitte", "ETH-Bahnhof", "ETH-Sunnyday", "ETH-Pedcross2", "KITTI-13", "KITTI-17", "ADL-Rundle-6", "ADL-Rundle-8", "Venice-2"));
         // Loop through all datasets
         for (String sequence : Sequences) {
