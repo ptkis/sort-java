@@ -1,75 +1,58 @@
-package quannm;
+package quannm
 
-import org.opencv.core.*;
-import org.opencv.video.KalmanFilter;
+import org.opencv.core.CvType
+import org.opencv.core.Mat
+import org.opencv.core.Rect
+import org.opencv.core.Scalar
+import org.opencv.video.KalmanFilter
+import java.util.concurrent.atomic.AtomicInteger
 
-import java.util.ArrayList;
+private val kf_count = AtomicInteger()
+class KalmanTracker(initRect: Rect) {
+    var m_time_since_update: Int
+    var m_hits: Int
+    var m_hit_streak: Int
+    var m_age: Int
+    var m_id: Int
+    private var kf = KalmanFilter()
+    private val measurement: Mat? = null
+    private val m_history = ArrayList<Rect>()
 
-import static org.opencv.core.CvType.CV_32F;
-
-public class KalmanTracker {
-
-    public static int kf_count = 0;
-    public int m_time_since_update;
-    public int m_hits;
-
-    public static int getKf_count() {
-        return kf_count;
+    init {
+        init_kf(initRect)
+        m_time_since_update = 0
+        m_hits = 0
+        m_hit_streak = 0
+        m_age = 0
+        m_id = kf_count.getAndIncrement()
     }
 
-    public static void setKf_count(int kf_count) {
-        KalmanTracker.kf_count = kf_count;
-    }
-
-    public int m_hit_streak;
-    public int m_age;
-    public int m_id;
-
-    private KalmanFilter kf = new KalmanFilter();
-    private Mat measurement;
-    private ArrayList<Rect> m_history = new ArrayList<>();
-
-    public KalmanTracker(Rect initRect)
-    {
-        init_kf(initRect);
-        m_time_since_update = 0;
-        m_hits = 0;
-        m_hit_streak = 0;
-        m_age = 0;
-        m_id = kf_count;
-        kf_count++;
-    }
-
-
-    private void init_kf(Rect stateMat){
-        int stateNum = 7;
-        int measureNum = 4;
-        kf = new KalmanFilter(stateNum, measureNum, 0,CvType.CV_32F);
-        Mat transitionMatrix = new Mat(7,7,CvType.CV_32F,new Scalar(0));
-        float[] tM  = {
-                1,0,0,0,1,0,0,
-                0,1,0,0,0,1,0,
-                0,0,1,0,0,0,1,
-                0,0,0,1,0,0,0,
-                0,0,0,0,1,0,0,
-                0,0,0,0,0,1,0,
-                0,0,0,0,0,0,1};
-        transitionMatrix.put(0,0,tM);
-        kf.set_transitionMatrix(transitionMatrix);
-
-        kf.set_measurementMatrix(Mat.eye(4,7,CV_32F));
-
-        Mat processNoiseCov = Mat.eye(7, 7, CvType.CV_32F);
-        processNoiseCov = processNoiseCov.mul(processNoiseCov, 1e-2);
-        kf.set_processNoiseCov(processNoiseCov);
-
-        Mat id1 = Mat.eye(4,4, CvType.CV_32F);
-        id1 = id1.mul(id1,1e-1);
-        kf.set_measurementNoiseCov(id1);
-
-        Mat id2 = Mat.eye(7,7, CvType.CV_32F);
+    private fun init_kf(stateMat: Rect) {
+        val stateNum = 7
+        val measureNum = 4
+        kf = KalmanFilter(stateNum, measureNum, 0, CvType.CV_32F)
+        val transitionMatrix = Mat(7, 7, CvType.CV_32F, Scalar(0.0))
+        val tM = floatArrayOf(
+            1f, 0f, 0f, 0f, 1f, 0f, 0f,
+            0f, 1f, 0f, 0f, 0f, 1f, 0f,
+            0f, 0f, 1f, 0f, 0f, 0f, 1f,
+            0f, 0f, 0f, 1f, 0f, 0f, 0f,
+            0f, 0f, 0f, 0f, 1f, 0f, 0f,
+            0f, 0f, 0f, 0f, 0f, 1f, 0f,
+            0f, 0f, 0f, 0f, 0f, 0f, 1f
+        )
+        transitionMatrix.put(0, 0, tM)
+        kf._transitionMatrix = transitionMatrix
+        kf._measurementMatrix = Mat.eye(4, 7, CvType.CV_32F)
+        var processNoiseCov = Mat.eye(7, 7, CvType.CV_32F)
+        processNoiseCov = processNoiseCov.mul(processNoiseCov, 1e-2)
+        kf._processNoiseCov = processNoiseCov
+        var id1 = Mat.eye(4, 4, CvType.CV_32F)
+        id1 = id1.mul(id1, 1e-1)
+        kf._measurementNoiseCov = id1
+        val id2 = Mat.eye(7, 7, CvType.CV_32F)
         //id2 = id2.mul(id2,0.1);
-        kf.set_errorCovPost(id2);
+        kf._errorCovPost = id2
 
 //        System.out.println("stateMat "+stateMat);
 //        System.out.println("stateMatx "+stateMat.x);
@@ -78,12 +61,12 @@ public class KalmanTracker {
 //        System.out.println("stateMatheight "+stateMat.height);
 //        System.out.println("stateMatarea "+stateMat.area());
 //        System.out.println("stateMatratio "+(float)stateMat.width / (float) stateMat.height);
-        Mat statePost = new Mat(7, 1, CvType.CV_32F, new Scalar(0));
-        statePost.put(0,0,stateMat.x+stateMat.width/2);
-        statePost.put(1,0,stateMat.y+stateMat.height/2);
-        statePost.put(2,0,stateMat.area());
-        statePost.put(3,0,(float)stateMat.width/(float)stateMat.height);
-        kf.set_statePost(statePost);
+        val statePost = Mat(7, 1, CvType.CV_32F, Scalar(0.0))
+        statePost.put(0, 0, (stateMat.x + stateMat.width / 2).toDouble())
+        statePost.put(1, 0, (stateMat.y + stateMat.height / 2).toDouble())
+        statePost.put(2, 0, stateMat.area())
+        statePost.put(3, 0, (stateMat.width.toFloat() / stateMat.height.toFloat()).toDouble())
+        kf._statePost = statePost
 
 //        System.out.println("transitionmat "+ kf.get_transitionMatrix().size());
 //        System.out.println("transitionmat\n "+ kf.get_transitionMatrix().dump());
@@ -99,67 +82,57 @@ public class KalmanTracker {
 //        System.out.println("statePre\n "+ kf.get_statePre().dump());
 //        System.out.println("statePost "+ kf.get_statePost().size());
 //        System.out.println("statePost\n "+ kf.get_statePost().dump());
-
     }
 
-    Rect predict(){
-        Mat p = kf.predict();
-//        System.out.println(" p "+ p.dump());
-        m_age += 1;
-        if(m_time_since_update > 0)
-            m_hit_streak = 0;
-        m_time_since_update += 1;
-        Rect predictBox = get_rect_xysr((float) p.get(0,0)[0],(float) p.get(1,0)[0],(float) p.get(2,0)[0],(float) p.get(3,0)[0]);
-        m_history.add(predictBox);
-        return m_history.get(m_history.size()-1);
+    fun predict(): Rect {
+        val p = kf.predict()
+        //        System.out.println(" p "+ p.dump());
+        m_age += 1
+        if (m_time_since_update > 0) m_hit_streak = 0
+        m_time_since_update += 1
+        val predictBox =
+            get_rect_xysr(p[0, 0][0].toFloat(), p[1, 0][0].toFloat(), p[2, 0][0].toFloat(), p[3, 0][0].toFloat())
+        m_history.add(predictBox)
+        return m_history[m_history.size - 1]
     }
 
-    void update(Rect stateMat){
-        m_time_since_update = 0;
-        m_history.clear();
-        m_hits += 1;
-        m_hit_streak += 1;
+    fun update(stateMat: Rect) {
+        m_time_since_update = 0
+        m_history.clear()
+        m_hits += 1
+        m_hit_streak += 1
 
         //measurement
 //        float[][] floatMeasurementArray = new float[][]{{stateMat.x+stateMat.width/2},{stateMat.y + stateMat.height/2},{(int) stateMat.area()},{(float)stateMat.width/(float)stateMat.height}};
 //        measurement = setMatrix(4,0,new Mat(4,0,CvType.CV_32F),floatMeasurementArray);
-        Mat measurement = new Mat(4, 1, CvType.CV_32F, new Scalar(0));
-        measurement.put(0,0,stateMat.x+stateMat.width/2);
-        measurement.put(1,0,stateMat.y+stateMat.height/2);
-        measurement.put(2,0,stateMat.area());
-        measurement.put(3,0,(float)stateMat.width/(float)stateMat.height);
+        val measurement = Mat(4, 1, CvType.CV_32F, Scalar(0.0))
+        measurement.put(0, 0, (stateMat.x + stateMat.width / 2).toDouble())
+        measurement.put(1, 0, (stateMat.y + stateMat.height / 2).toDouble())
+        measurement.put(2, 0, stateMat.area())
+        measurement.put(3, 0, (stateMat.width.toFloat() / stateMat.height.toFloat()).toDouble())
         // update
-        kf.correct(measurement);
+        kf.correct(measurement)
     }
 
-    public Rect get_state(){
-        Mat s = kf.get_statePost();
-        return get_rect_xysr((float) s.get(0,0)[0],(float) s.get(1,0)[0],(float) s.get(2,0)[0],(float) s.get(3,0)[0]);
+    fun get_state(): Rect {
+        val s = kf._statePost
+        return get_rect_xysr(s[0, 0][0].toFloat(), s[1, 0][0].toFloat(), s[2, 0][0].toFloat(), s[3, 0][0].toFloat())
     }
 
-    private Mat setMatrix(int rowNum, int colNum, Mat tempMatrix, float[][] intArray) {
-
-        for (int row = 0; row < rowNum; row++) {
-            for (int col = 0; col < colNum; col++)
-                tempMatrix.put(row, col, intArray[row][col]);
+    private fun setMatrix(rowNum: Int, colNum: Int, tempMatrix: Mat, intArray: Array<FloatArray>): Mat {
+        for (row in 0 until rowNum) {
+            for (col in 0 until colNum) tempMatrix.put(row, col, intArray[row][col].toDouble())
         }
-        return tempMatrix;
+        return tempMatrix
     }
 
-    private Rect get_rect_xysr(float cx,float cy, float s, float r){
-        int w = (int) Math.sqrt(s*r);
-        int h = (int) (s / w);
-        int x = (int) (cx - w / 2);
-        int y = (int) (cy - h / 2);
-
-        if (x < 0 && cx > 0)
-            x = 0;
-        if (y < 0 && cy > 0)
-            y = 0;
-
-        return new Rect(x, y, w, h);
+    private fun get_rect_xysr(cx: Float, cy: Float, s: Float, r: Float): Rect {
+        val w = Math.sqrt((s * r).toDouble()).toInt()
+        val h = (s / w).toInt()
+        var x = (cx - w / 2).toInt()
+        var y = (cy - h / 2).toInt()
+        if (x < 0 && cx > 0) x = 0
+        if (y < 0 && cy > 0) y = 0
+        return Rect(x, y, w, h)
     }
-
-
-
 }

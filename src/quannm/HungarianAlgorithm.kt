@@ -1,335 +1,485 @@
-package quannm;
+package quannm
 
-import org.opencv.core.Mat;
+import org.opencv.core.Mat
 
-import java.util.ArrayList;
-
-public class HungarianAlgorithm {
-    private static final double DBL_EPSILON = 2.22044604925031308084726333618164062e-16;;
-
-    public HungarianAlgorithm() {
-    }
-
-    public Double Solve(Mat DistMatrix, ArrayList<Integer> Assignment){
+class HungarianAlgorithm {
+    fun Solve(DistMatrix: Mat, Assignment: ArrayList<Int>): Double {
 //        System.out.println("solve");
-        int nRows = (int) DistMatrix.size().height;
-        int nCols = (int) DistMatrix.size().width;
-//        System.out.println("hung rowcol "+ nRows+" "+nCols);
-        double[] distMatrixIn = new double[nRows*nCols];
-        int[] assignment = new int[nRows];
-        double cost = 0.0;
-        for ( int i = 0; i < nRows; i++)
-            for ( int j = 0; j < nCols; j++)
-                distMatrixIn[i + nRows * j] = DistMatrix.get(i,j)[0];
-
-        assignmentoptimal(assignment, cost, distMatrixIn, nRows, nCols);
-
-        Assignment.clear();
-        for (int r = 0; r < nRows; r++){
+        val nRows = DistMatrix.size().height.toInt()
+        val nCols = DistMatrix.size().width.toInt()
+        //        System.out.println("hung rowcol "+ nRows+" "+nCols);
+        val distMatrixIn = DoubleArray(nRows * nCols)
+        val assignment = IntArray(nRows)
+        val cost = 0.0
+        for (i in 0 until nRows) for (j in 0 until nCols) distMatrixIn[i + nRows * j] = DistMatrix[i, j][0]
+        assignmentoptimal(assignment, cost, distMatrixIn, nRows, nCols)
+        Assignment.clear()
+        for (r in 0 until nRows) {
 //            System.out.println(assignment[r]);
-            Assignment.add(assignment[r]);
+            Assignment.add(assignment[r])
         }
-
-        return cost;
+        return cost
     }
 
-    public void assignmentoptimal(int [] assignment, double cost, double[] distMatrixIn, int nOfRows, int nOfColumns){
+    fun assignmentoptimal(
+        assignment: IntArray,
+        cost: Double,
+        distMatrixIn: DoubleArray,
+        nOfRows: Int,
+        nOfColumns: Int
+    ) {
         /* initialization */
 //        System.out.println("assignment optimal");
-        cost = 0;
-
-        for (int row = 0 ; row < nOfRows; row++)
-            assignment[row] = -1;
+        var cost = cost
+        cost = 0.0
+        for (row in 0 until nOfRows) assignment[row] = -1
         /* generate working copy of distance Matrix */
         /* check if all matrix elements are positive */
-        int nOfElements = nOfRows * nOfColumns;
-        double[] distMatrix = new double[nOfElements];
-        for (int row = 0 ; row < nOfElements; row++){
-            double value = distMatrixIn[row];
-            assert value >= 0 : "All matrix elements have to be non-negative.\n";
-
-            distMatrix[row] = value;
+        val nOfElements = nOfRows * nOfColumns
+        val distMatrix = DoubleArray(nOfElements)
+        for (row in 0 until nOfElements) {
+            val value = distMatrixIn[row]
+            assert(value >= 0) { "All matrix elements have to be non-negative.\n" }
+            distMatrix[row] = value
         }
-
-        boolean[] coveredColumns = new boolean[nOfColumns];
-        boolean[] coveredRows = new boolean[nOfRows];
-        boolean[] starMatrix = new boolean[nOfElements];
-        boolean[] primeMatrix = new boolean[nOfElements];
-        boolean[] newStarMatrix = new boolean[nOfElements];
-        int minDim;
-        /* preliminary steps */
-
-        if (nOfRows <= nOfColumns){
-            minDim = nOfRows;
-            double minValue,value;
-
-            for (int row = 0; row < nOfRows; row++){
-                int current_index = row;
-                minValue = distMatrix[current_index];
-                current_index += nOfRows;
-                while(current_index<nOfElements){
-                    value = distMatrix[current_index];
-                    if(value<minValue){
-                        minValue = value;
+        val coveredColumns = BooleanArray(nOfColumns)
+        val coveredRows = BooleanArray(nOfRows)
+        val starMatrix = BooleanArray(nOfElements)
+        val primeMatrix = BooleanArray(nOfElements)
+        val newStarMatrix = BooleanArray(nOfElements)
+        val minDim: Int
+        /* preliminary steps */if (nOfRows <= nOfColumns) {
+            minDim = nOfRows
+            var minValue: Double
+            var value: Double
+            for (row in 0 until nOfRows) {
+                var current_index = row
+                minValue = distMatrix[current_index]
+                current_index += nOfRows
+                while (current_index < nOfElements) {
+                    value = distMatrix[current_index]
+                    if (value < minValue) {
+                        minValue = value
                     }
-                    current_index += nOfRows;
+                    current_index += nOfRows
                 }
-
-                current_index = row;
-                while(current_index<nOfElements){
-                    distMatrix[current_index] -= minValue;
-                    current_index += nOfRows;
+                current_index = row
+                while (current_index < nOfElements) {
+                    distMatrix[current_index] -= minValue
+                    current_index += nOfRows
                 }
             }
-            /* Steps 1 and 2a */
-            for(int row =0 ; row<nOfRows;row++){
-                for(int col =0 ; col<nOfColumns;col++){
-                    if(Math.abs(distMatrix[row+nOfRows*col])<DBL_EPSILON){
-                        if(!coveredColumns[col]){
-                            starMatrix[row+nOfRows*col] = true;
-                            coveredColumns[col] = true;
-                            break;
+            /* Steps 1 and 2a */for (row in 0 until nOfRows) {
+                for (col in 0 until nOfColumns) {
+                    if (Math.abs(distMatrix[row + nOfRows * col]) < DBL_EPSILON) {
+                        if (!coveredColumns[col]) {
+                            starMatrix[row + nOfRows * col] = true
+                            coveredColumns[col] = true
+                            break
                         }
                     }
                 }
             }
-        }
-        else /* if(nOfRows > nOfColumns) */
-        {
-            minDim = nOfColumns;
-            double value;
-            int current_index;
-            for (int col =0 ; col < nOfColumns; col++){
+        } else  /* if(nOfRows > nOfColumns) */ {
+            minDim = nOfColumns
+            var value: Double
+            var current_index: Int
+            for (col in 0 until nOfColumns) {
                 /* find the smallest element in the column */
-                current_index =  nOfRows*col;
-                int columnEnd =  nOfRows*col + nOfRows;
-                double minValue = distMatrix[current_index];
-                while (current_index<columnEnd){
-                    value = distMatrix[current_index];
-                    current_index++;
-                    if (value < minValue)
-                        minValue = value;
+                current_index = nOfRows * col
+                val columnEnd = nOfRows * col + nOfRows
+                var minValue = distMatrix[current_index]
+                while (current_index < columnEnd) {
+                    value = distMatrix[current_index]
+                    current_index++
+                    if (value < minValue) minValue = value
                 }
-                /* subtract the smallest element from each element of the column */
-                current_index =  nOfRows*col;
-                while(current_index<columnEnd){
-                    distMatrix[current_index] -= minValue;
-                    current_index++;
+                /* subtract the smallest element from each element of the column */current_index = nOfRows * col
+                while (current_index < columnEnd) {
+                    distMatrix[current_index] -= minValue
+                    current_index++
                 }
             }
-            /* Steps 1 and 2a */
-            for(int col = 0; col< nOfColumns;col++){
-                for (int row = 0 ; row <nOfRows; row++){
-                    if(Math.abs(distMatrix[row+nOfRows*col])<DBL_EPSILON){
-                        if(!coveredRows[row]){
-                            starMatrix[row+ nOfRows*col] = true;
-                            coveredColumns[col] = true;
-                            coveredRows[row] = true;
-                            break;
+            /* Steps 1 and 2a */for (col in 0 until nOfColumns) {
+                for (row in 0 until nOfRows) {
+                    if (Math.abs(distMatrix[row + nOfRows * col]) < DBL_EPSILON) {
+                        if (!coveredRows[row]) {
+                            starMatrix[row + nOfRows * col] = true
+                            coveredColumns[col] = true
+                            coveredRows[row] = true
+                            break
                         }
                     }
                 }
             }
-            for (int row = 0; row < nOfRows; row++)
-                coveredRows[row] = false;
+            for (row in 0 until nOfRows) coveredRows[row] = false
         }
 
-        /* move to step 2b */
-        step2b(assignment, distMatrix, starMatrix, newStarMatrix, primeMatrix, coveredColumns, coveredRows, nOfRows, nOfColumns, minDim);
-        /* compute cost and remove invalid assignments */
-
-        computeassignmentcost(assignment, cost, distMatrixIn, nOfRows);
-        return;
+        /* move to step 2b */step2b(
+            assignment,
+            distMatrix,
+            starMatrix,
+            newStarMatrix,
+            primeMatrix,
+            coveredColumns,
+            coveredRows,
+            nOfRows,
+            nOfColumns,
+            minDim
+        )
+        /* compute cost and remove invalid assignments */computeassignmentcost(assignment, cost, distMatrixIn, nOfRows)
+        return
     }
-    void buildassignmentvector(int[] assignment, boolean[] starMatrix, int nOfRows, int nOfColumns){
+
+    fun buildassignmentvector(assignment: IntArray, starMatrix: BooleanArray, nOfRows: Int, nOfColumns: Int) {
 //        System.out.println("buildassignmentvector");
-        int row,col;
-        for (row = 0; row < nOfRows;row++)
-            for (col = 0; col <nOfColumns; col++)
-                if(starMatrix[row+ nOfRows*col]){
-                    assignment[row] = col;
-                    break;
+        var row: Int
+        var col: Int
+        row = 0
+        while (row < nOfRows) {
+            col = 0
+            while (col < nOfColumns) {
+                if (starMatrix[row + nOfRows * col]) {
+                    assignment[row] = col
+                    break
                 }
-    }
-
-    void computeassignmentcost(int[] assignment, double cost, double[] distMatrix, int nOfRows){
-//        System.out.println("computeassignmentcost");
-        int row,col;
-        for (row = 0 ;row< nOfRows; row++){
-            col = assignment[row];
-            if(col>=0)
-                cost+= distMatrix[row+nOfRows*col];
-        }
-    }
-
-    void step2a(int[] assignment, double[] distMatrix, boolean[] starMatrix, boolean[] newStarMatrix, boolean[] primeMatrix, boolean[] coveredColumns, boolean[] coveredRows, int nOfRows, int nOfColumns, int minDim ){
-//        System.out.println("step2a");
-        int columnEnd;
-        int col;
-        /* cover every column containing a starred zero */
-        for (col = 0; col<nOfColumns; col++)
-        {
-            int currentIndex =  nOfRows*col;
-            columnEnd =  nOfRows*col + nOfRows;
-            while (currentIndex < columnEnd){
-                if (starMatrix[currentIndex])
-                {
-                    coveredColumns[col] = true;
-                    break;
-                }
-                currentIndex++;
+                col++
             }
+            row++
         }
-//        System.out.println("step2a1");
-        /* move to step 3 */
-        step2b(assignment, distMatrix, starMatrix, newStarMatrix, primeMatrix, coveredColumns, coveredRows, nOfRows, nOfColumns, minDim);
     }
 
-    void step2b(int[] assignment, double[] distMatrix, boolean[] starMatrix, boolean[] newStarMatrix, boolean[] primeMatrix, boolean[] coveredColumns, boolean[] coveredRows, int nOfRows, int nOfColumns, int minDim ){
+    fun computeassignmentcost(assignment: IntArray, cost: Double, distMatrix: DoubleArray, nOfRows: Int) {
+//        System.out.println("computeassignmentcost");
+        var cost = cost
+        var row: Int
+        var col: Int
+        row = 0
+        while (row < nOfRows) {
+            col = assignment[row]
+            if (col >= 0) cost += distMatrix[row + nOfRows * col]
+            row++
+        }
+    }
+
+    fun step2a(
+        assignment: IntArray,
+        distMatrix: DoubleArray,
+        starMatrix: BooleanArray,
+        newStarMatrix: BooleanArray,
+        primeMatrix: BooleanArray,
+        coveredColumns: BooleanArray,
+        coveredRows: BooleanArray,
+        nOfRows: Int,
+        nOfColumns: Int,
+        minDim: Int
+    ) {
+//        System.out.println("step2a");
+        var columnEnd: Int
+        var col: Int
+        /* cover every column containing a starred zero */col = 0
+        while (col < nOfColumns) {
+            var currentIndex = nOfRows * col
+            columnEnd = nOfRows * col + nOfRows
+            while (currentIndex < columnEnd) {
+                if (starMatrix[currentIndex]) {
+                    coveredColumns[col] = true
+                    break
+                }
+                currentIndex++
+            }
+            col++
+        }
+        //        System.out.println("step2a1");
+        /* move to step 3 */step2b(
+            assignment,
+            distMatrix,
+            starMatrix,
+            newStarMatrix,
+            primeMatrix,
+            coveredColumns,
+            coveredRows,
+            nOfRows,
+            nOfColumns,
+            minDim
+        )
+    }
+
+    fun step2b(
+        assignment: IntArray,
+        distMatrix: DoubleArray,
+        starMatrix: BooleanArray,
+        newStarMatrix: BooleanArray,
+        primeMatrix: BooleanArray,
+        coveredColumns: BooleanArray,
+        coveredRows: BooleanArray,
+        nOfRows: Int,
+        nOfColumns: Int,
+        minDim: Int
+    ) {
 //        System.out.println("step2b");
-        int col, nOfCoveredColumns;
+        var col: Int
+        var nOfCoveredColumns: Int
 
-        /* count covered columns */
-        nOfCoveredColumns = 0;
-        for (col = 0; col<nOfColumns; col++)
-            if (coveredColumns[col])
-                nOfCoveredColumns++;
-
-        if (nOfCoveredColumns == minDim)
-        {
-            /* algorithm finished */
-            buildassignmentvector(assignment, starMatrix, nOfRows, nOfColumns);
+        /* count covered columns */nOfCoveredColumns = 0
+        col = 0
+        while (col < nOfColumns) {
+            if (coveredColumns[col]) nOfCoveredColumns++
+            col++
         }
-        else
-        {
+        if (nOfCoveredColumns == minDim) {
+            /* algorithm finished */
+            buildassignmentvector(assignment, starMatrix, nOfRows, nOfColumns)
+        } else {
             /* move to step 3 */
-
-            step3(assignment, distMatrix, starMatrix, newStarMatrix, primeMatrix, coveredColumns, coveredRows, nOfRows, nOfColumns, minDim);
+            step3(
+                assignment,
+                distMatrix,
+                starMatrix,
+                newStarMatrix,
+                primeMatrix,
+                coveredColumns,
+                coveredRows,
+                nOfRows,
+                nOfColumns,
+                minDim
+            )
         }
     }
 
-    void step3(int[] assignment, double[] distMatrix, boolean[] starMatrix, boolean[] newStarMatrix, boolean[] primeMatrix, boolean[] coveredColumns, boolean[] coveredRows, int nOfRows, int nOfColumns, int minDim ){
+    fun step3(
+        assignment: IntArray,
+        distMatrix: DoubleArray,
+        starMatrix: BooleanArray,
+        newStarMatrix: BooleanArray,
+        primeMatrix: BooleanArray,
+        coveredColumns: BooleanArray,
+        coveredRows: BooleanArray,
+        nOfRows: Int,
+        nOfColumns: Int,
+        minDim: Int
+    ) {
 //        System.out.println("step3");
-        boolean zerosFound;
-        int row,col,starCol;
-        zerosFound = true;
-        while(zerosFound){
-            zerosFound = false;
-            for (col = 0; col<nOfColumns; col++)
-                if (!coveredColumns[col])
-                    for (row = 0; row<nOfRows; row++)
-                        if ((!coveredRows[row]) && (Math.abs(distMatrix[row + nOfRows*col]) < DBL_EPSILON))
-                        {
+        var zerosFound: Boolean
+        var row: Int
+        var col: Int
+        var starCol: Int
+        zerosFound = true
+        while (zerosFound) {
+            zerosFound = false
+            col = 0
+            while (col < nOfColumns) {
+                if (!coveredColumns[col]) {
+                    row = 0
+                    while (row < nOfRows) {
+                        if (!coveredRows[row] && Math.abs(distMatrix[row + nOfRows * col]) < DBL_EPSILON) {
                             /* prime zero */
-                            primeMatrix[row + nOfRows*col] = true;
+                            primeMatrix[row + nOfRows * col] = true
 
-                            /* find starred zero in current row */
-                            for (starCol = 0; starCol<nOfColumns; starCol++)
-                                if (starMatrix[row + nOfRows*starCol])
-                                    break;
-
-                            if (starCol == nOfColumns) /* no starred zero found */
-                            {
-                                /* move to step 4 */
-                                step4(assignment, distMatrix, starMatrix, newStarMatrix, primeMatrix, coveredColumns, coveredRows, nOfRows, nOfColumns, minDim, row, col);
-                                return;
+                            /* find starred zero in current row */starCol = 0
+                            while (starCol < nOfColumns) {
+                                if (starMatrix[row + nOfRows * starCol]) break
+                                starCol++
                             }
-                            else
-                            {
-                                coveredRows[row] = true;
-                                coveredColumns[starCol] = false;
-                                zerosFound = true;
-                                break;
+                            if (starCol == nOfColumns) /* no starred zero found */ {
+                                /* move to step 4 */
+                                step4(
+                                    assignment,
+                                    distMatrix,
+                                    starMatrix,
+                                    newStarMatrix,
+                                    primeMatrix,
+                                    coveredColumns,
+                                    coveredRows,
+                                    nOfRows,
+                                    nOfColumns,
+                                    minDim,
+                                    row,
+                                    col
+                                )
+                                return
+                            } else {
+                                coveredRows[row] = true
+                                coveredColumns[starCol] = false
+                                zerosFound = true
+                                break
                             }
                         }
+                        row++
+                    }
+                }
+                col++
+            }
         }
-        /* move to step 5 */
-
-        step5(assignment, distMatrix, starMatrix, newStarMatrix, primeMatrix, coveredColumns, coveredRows, nOfRows, nOfColumns, minDim);
+        /* move to step 5 */step5(
+            assignment,
+            distMatrix,
+            starMatrix,
+            newStarMatrix,
+            primeMatrix,
+            coveredColumns,
+            coveredRows,
+            nOfRows,
+            nOfColumns,
+            minDim
+        )
     }
 
-    void step4(int[] assignment, double[] distMatrix, boolean[] starMatrix, boolean[] newStarMatrix, boolean[] primeMatrix, boolean[] coveredColumns, boolean[] coveredRows, int nOfRows, int nOfColumns, int minDim, int row, int col ){
+    fun step4(
+        assignment: IntArray,
+        distMatrix: DoubleArray,
+        starMatrix: BooleanArray,
+        newStarMatrix: BooleanArray,
+        primeMatrix: BooleanArray,
+        coveredColumns: BooleanArray,
+        coveredRows: BooleanArray,
+        nOfRows: Int,
+        nOfColumns: Int,
+        minDim: Int,
+        row: Int,
+        col: Int
+    ) {
 //        System.out.println("step4");
-        int n, starRow, starCol, primeRow, primeCol;
-        int nOfElements = nOfRows*nOfColumns;
+        var n: Int
+        var starRow: Int
+        var starCol: Int
+        var primeRow: Int
+        var primeCol: Int
+        val nOfElements = nOfRows * nOfColumns
 
-        /* generate temporary copy of starMatrix */
-        for (n = 0; n<nOfElements; n++)
-            newStarMatrix[n] = starMatrix[n];
+        /* generate temporary copy of starMatrix */n = 0
+        while (n < nOfElements) {
+            newStarMatrix[n] = starMatrix[n]
+            n++
+        }
 
-        /* star current zero */
-        newStarMatrix[row + nOfRows*col] = true;
+        /* star current zero */newStarMatrix[row + nOfRows * col] = true
 
-        /* find starred zero in current column */
-        starCol = col;
-        for (starRow = 0; starRow<nOfRows; starRow++)
-            if (starMatrix[starRow + nOfRows*starCol])
-                break;
-
-        while (starRow<nOfRows)
-        {
+        /* find starred zero in current column */starCol = col
+        starRow = 0
+        while (starRow < nOfRows) {
+            if (starMatrix[starRow + nOfRows * starCol]) break
+            starRow++
+        }
+        while (starRow < nOfRows) {
             /* unstar the starred zero */
-            newStarMatrix[starRow + nOfRows*starCol] = false;
+            newStarMatrix[starRow + nOfRows * starCol] = false
 
-            /* find primed zero in current row */
-            primeRow = starRow;
-            for (primeCol = 0; primeCol<nOfColumns; primeCol++)
-                if (primeMatrix[primeRow + nOfRows*primeCol])
-                    break;
+            /* find primed zero in current row */primeRow = starRow
+            primeCol = 0
+            while (primeCol < nOfColumns) {
+                if (primeMatrix[primeRow + nOfRows * primeCol]) break
+                primeCol++
+            }
 
-            /* star the primed zero */
-            newStarMatrix[primeRow + nOfRows*primeCol] = true;
+            /* star the primed zero */newStarMatrix[primeRow + nOfRows * primeCol] = true
 
-            /* find starred zero in current column */
-            starCol = primeCol;
-            for (starRow = 0; starRow<nOfRows; starRow++)
-                if (starMatrix[starRow + nOfRows*starCol])
-                    break;
+            /* find starred zero in current column */starCol = primeCol
+            starRow = 0
+            while (starRow < nOfRows) {
+                if (starMatrix[starRow + nOfRows * starCol]) break
+                starRow++
+            }
         }
 
         /* use temporary copy as new starMatrix */
-        /* delete all primes, uncover all rows */
-        for (n = 0; n<nOfElements; n++)
-        {
-            primeMatrix[n] = false;
-            starMatrix[n] = newStarMatrix[n];
+        /* delete all primes, uncover all rows */n = 0
+        while (n < nOfElements) {
+            primeMatrix[n] = false
+            starMatrix[n] = newStarMatrix[n]
+            n++
         }
-        for (n = 0; n<nOfRows; n++)
-            coveredRows[n] = false;
+        n = 0
+        while (n < nOfRows) {
+            coveredRows[n] = false
+            n++
+        }
 
-        /* move to step 2a */
-        step2a(assignment, distMatrix, starMatrix, newStarMatrix, primeMatrix, coveredColumns, coveredRows, nOfRows, nOfColumns, minDim);
+        /* move to step 2a */step2a(
+            assignment,
+            distMatrix,
+            starMatrix,
+            newStarMatrix,
+            primeMatrix,
+            coveredColumns,
+            coveredRows,
+            nOfRows,
+            nOfColumns,
+            minDim
+        )
     }
-    void step5(int[] assignment, double[] distMatrix, boolean[] starMatrix, boolean[] newStarMatrix, boolean[] primeMatrix, boolean[] coveredColumns, boolean[] coveredRows, int nOfRows, int nOfColumns, int minDim ){
+
+    fun step5(
+        assignment: IntArray,
+        distMatrix: DoubleArray,
+        starMatrix: BooleanArray,
+        newStarMatrix: BooleanArray,
+        primeMatrix: BooleanArray,
+        coveredColumns: BooleanArray,
+        coveredRows: BooleanArray,
+        nOfRows: Int,
+        nOfColumns: Int,
+        minDim: Int
+    ) {
 //        System.out.println("step5");
-        double h, value;
-        int row, col;
-        double DBL_MAX = (double) 1.79769313486231570814527423731704357e+308;
-        /* find smallest uncovered element h */
-        h = DBL_MAX;
-        for (row = 0; row<nOfRows; row++)
-            if (!coveredRows[row])
-                for (col = 0; col<nOfColumns; col++)
-                    if (!coveredColumns[col])
-                    {
-                        value = distMatrix[row + nOfRows*col];
-                        if (value < h)
-                            h = value;
+        var h: Double
+        var value: Double
+        var row: Int
+        var col: Int
+        /* find smallest uncovered element h */h = 1.79769313486231570814527423731704357e+308
+        row = 0
+        while (row < nOfRows) {
+            if (!coveredRows[row]) {
+                col = 0
+                while (col < nOfColumns) {
+                    if (!coveredColumns[col]) {
+                        value = distMatrix[row + nOfRows * col]
+                        if (value < h) h = value
                     }
+                    col++
+                }
+            }
+            row++
+        }
 
-        /* add h to each covered row */
-        for (row = 0; row<nOfRows; row++)
-            if (coveredRows[row])
-                for (col = 0; col<nOfColumns; col++)
-                    distMatrix[row + nOfRows*col] += h;
+        /* add h to each covered row */row = 0
+        while (row < nOfRows) {
+            if (coveredRows[row]) {
+                col = 0
+                while (col < nOfColumns) {
+                    distMatrix[row + nOfRows * col] += h
+                    col++
+                }
+            }
+            row++
+        }
 
-        /* subtract h from each uncovered column */
-        for (col = 0; col<nOfColumns; col++)
-            if (!coveredColumns[col])
-                for (row = 0; row<nOfRows; row++)
-                    distMatrix[row + nOfRows*col] -= h;
-        /* move to step 3 */
-        step3(assignment, distMatrix, starMatrix, newStarMatrix, primeMatrix, coveredColumns, coveredRows, nOfRows, nOfColumns, minDim);
+        /* subtract h from each uncovered column */col = 0
+        while (col < nOfColumns) {
+            if (!coveredColumns[col]) {
+                row = 0
+                while (row < nOfRows) {
+                    distMatrix[row + nOfRows * col] -= h
+                    row++
+                }
+            }
+            col++
+        }
+        /* move to step 3 */step3(
+            assignment,
+            distMatrix,
+            starMatrix,
+            newStarMatrix,
+            primeMatrix,
+            coveredColumns,
+            coveredRows,
+            nOfRows,
+            nOfColumns,
+            minDim
+        )
     }
 
+    companion object {
+        private const val DBL_EPSILON = 2.22044604925031308084726333618164062e-16
+    }
 }

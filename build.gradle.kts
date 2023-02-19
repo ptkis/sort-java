@@ -1,4 +1,5 @@
 plugins {
+    kotlin("jvm") version "1.8.10"
     java
     application
 }
@@ -30,13 +31,15 @@ tasks.test {
 
 sourceSets {
     main {
-        java {
+        kotlin {
             srcDir("src")
             exclude("**/*.txt")
-        }
-        resources {
-            srcDir("src")
-            exclude("*.java")
+            exclude("**/*.jpg")
         }
     }
+}
+
+
+kotlin {
+    jvmToolchain(11)
 }
