@@ -7,8 +7,7 @@ import org.opencv.core.Scalar
 import org.opencv.video.KalmanFilter
 import java.util.concurrent.atomic.AtomicInteger
 
-private val kf_count = AtomicInteger()
-class KalmanTracker(initRect: Rect) {
+class KalmanTracker(initRect: Rect, kf_count: AtomicInteger) {
     var m_time_since_update: Int
     var m_hits: Int
     var m_hit_streak: Int

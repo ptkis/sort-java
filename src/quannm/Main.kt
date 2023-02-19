@@ -13,6 +13,7 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.*
+import java.util.concurrent.atomic.AtomicInteger
 
 //import com.google.common.collect.Sets;
 object Main {
@@ -134,6 +135,7 @@ object Main {
         val start_time: Long = 0
         val fstream = FileWriter("src/output/$seqName.txt", false)
 
+        val kfCount = AtomicInteger()
         // main loop
         for (fi in 0 until maxFrame) {
             total_frames++
@@ -144,7 +146,7 @@ object Main {
             {
                 // initialize kalman trackers using first detections.
                 for (i in detFrameData[fi].indices) {
-                    val trk = KalmanTracker(detFrameData[fi][i].box!!)
+                    val trk = KalmanTracker(detFrameData[fi][i].box!!, kfCount)
                     trackers.add(trk)
                 }
 
@@ -254,7 +256,7 @@ object Main {
             // create and initialise new trackers for unmatched detections
             for (umd in unmatchedDetections) {
 //                System.out.println(detFrameData.get(fi).get(umd).getBox());
-                val tracker = KalmanTracker(detFrameData[fi][umd!!].box!!)
+                val tracker = KalmanTracker(detFrameData[fi][umd!!].box!!, kfCount)
                 trackers.add(tracker)
             }
             // get trackers' output
