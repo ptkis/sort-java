@@ -11,7 +11,7 @@ repositories {
 }
 
 dependencies {
-    implementation("org.openpnp:opencv:4.5.5-1")
+    implementation("org.openpnp:opencv:4.6.0-0")
 
     implementation("commons-io:commons-io:2.11.0")
     implementation("com.google.guava:guava:31.1-jre")
